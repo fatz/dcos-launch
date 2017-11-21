@@ -1,6 +1,6 @@
 ---
 launch_config_version: 1
-deployment_name: acs-engine-test-foobar
+deployment_name: acs-engine-test-foobar-2
 provider: acs-engine
 key_helper: true
 num_masters: 1
@@ -11,11 +11,3 @@ num_linux_private_agents: 1
 tags:
     expiration: 4h
     owner: '@mellenburg'
-template_parameters:
-    linuxAdminUsername: 'azure'
-    masterVMSize: 'Standard_D2'
-    wpubEndpointDNSNamePrefix: dcos123pubwin
-    linpubEndpointDNSNamePrefix: dcos123publin
-    masterEndpointDNSNamePrefix: dcos123master
-    windowsAdminUsername: 'azure'
-    windowsAdminPassword: 'foobar'

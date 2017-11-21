@@ -121,7 +121,12 @@ def run_acs_engine(acs_engine_url: str, acs_engine_template):
 
     with open(os.path.join(tmpdir, '_output/dcos-mstr/azuredeploy.json'), 'r') as f:
         arm_template = json.load(f)
-    return arm_template
+    with open(os.path.join(tmpdir, '_output/dcos-mstr/azuredeploy.parameters.json'), 'r') as f:
+        arm_template_parameters_raw = json.load(f)
+    arm_template_parameters = dict()
+    for k, v in arm_template_parameters_raw['parameters'].items():
+        arm_template_parameters[k] = v['value']
+    return arm_template, arm_template_parameters
 
 
 class ACSEngineLauncher(dcos_launch.util.AbstractLauncher):
@@ -148,7 +153,6 @@ class ACSEngineLauncher(dcos_launch.util.AbstractLauncher):
     def create(self):
         if self.config['key_helper']:
             private_key, public_key = dcos_launch.util.generate_rsa_keypair()
-            self.config['template_parameters'].update({'sshRSAPublicKey': public_key.decode()})
             self.config.update({
                 'ssh_private_key': private_key.decode(),
                 'ssh_public_key': public_key.decode()})
@@ -167,11 +171,11 @@ class ACSEngineLauncher(dcos_launch.util.AbstractLauncher):
             self.config['windows_admin_user'],
             self.config['windows_admin_password'],
             self.config['linux_admin_user'])
-        arm_template = run_acs_engine(self.config['acs_engine_tarball_url'], acs_engine_template)
+        arm_template, self.config['template_parameters'] = run_acs_engine(self.config['acs_engine_tarball_url'], acs_engine_template)  # noqa
         self.azure_wrapper.deploy_template_to_new_resource_group(
             self.config.get('template_url'),
             self.config['deployment_name'],
-            self.config.get('template_parameters', dict()),
+            self.config['template_parameters'],
             self.config.get('tags'),
             template=arm_template)
         return self.config
