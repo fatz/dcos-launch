@@ -1,6 +1,6 @@
 ---
 launch_config_version: 1
-deployment_name: acs-engine-test-foobar-2
+deployment_name: acs-engine-test-foobar-123
 provider: acs-engine
 key_helper: true
 num_masters: 1

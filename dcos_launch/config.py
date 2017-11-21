@@ -361,7 +361,7 @@ ACS_ENGINE_SCHEMA = {
         'default': 'azureuser'},
     'windows_admin_password': {
         'type': 'string',
-        'default': 'replacepassword123'},
+        'default': 'Replacepassword123'},
     'linux_admin_user': {
         'type': 'string',
         'default': 'azureuser'},
