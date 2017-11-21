@@ -1,4 +1,5 @@
 import os
+import sys
 
 import cerberus
 import yaml
@@ -101,8 +102,12 @@ def get_validated_config(user_config: dict, config_dir: str) -> dict:
     provider = validator.normalized(user_config)['provider']
     if provider == 'onprem':
         validator.schema.update(ONPREM_DEPLOY_COMMON_SCHEMA)
-    else:
+    elif provider in ('aws', 'azure'):
         validator.schema.update(TEMPLATE_DEPLOY_COMMON_SCHEMA)
+    elif provider == 'acs-engine':
+        validator.schema.update(ACS_ENGINE_SCHEMA)
+    else:
+        raise Exception('Unknown provider!: {}'.format(provider))
 
     # validate again before attempting to add platform information
     if not validator.validate(user_config):
@@ -156,6 +161,7 @@ COMMON_SCHEMA = {
         'allowed': [
             'aws',
             'azure',
+            'acs-engine',
             'onprem']},
     'launch_config_version': {
         'type': 'integer',
@@ -291,6 +297,77 @@ AWS_ONPREM_SCHEMA = {
         'required': True,
         'type': 'string',
         'default_setter': lambda doc: aws.OS_SSH_INFO[doc['os_name']].user}}
+
+
+def get_platform_dependent_acs_engine_url():
+    if sys.platform in ['linux', 'linux2']:
+        return 'https://github.com/Azure/acs-engine/releases/download/v0.8.0/acs-engine-v0.8.0-linux-amd64.tar.gz'  # noqa
+    elif sys.platform == 'darwin':
+        return 'https://github.com/Azure/acs-engine/releases/download/v0.8.0/acs-engine-v0.8.0-darwin-amd64.tar.gz'  # noqa
+    elif sys.platform == 'win32':
+        return 'https://github.com/Azure/acs-engine/releases/download/v0.8.0/acs-engine-v0.8.0-windows-amd64.tar.gz'  # noqa
+    else:
+        raise Exception('No ACS-Engine distribution for {}'.format(sys.platform))
+
+
+ACS_ENGINE_SCHEMA = {
+    'acs_engine_tarball_url': {
+        'type': 'string',
+        'required': True,
+        'default': get_platform_dependent_acs_engine_url()},
+    'acs_template_filename': {
+        'type': 'string',
+        'required': False},
+    'platform': {
+        'type': 'string',
+        'readonly': True,
+        'default': 'azure'},
+    'ssh_public_key': {
+        'type': 'string',
+        'required': False},
+    'num_masters': {
+        'type': 'integer',
+        'allowed': [1, 3, 5, 7, 9],
+        'required': True},
+    'master_vm_size': {
+        'type': 'string',
+        'default': 'Standard_D2_v2'},
+    'num_windows_private_agents': {
+        'type': 'integer',
+        'default': 0},
+    'windows_private_vm_size': {
+        'type': 'string',
+        'default': 'Standard_D2_v2'},
+    'num_windows_public_agents': {
+        'type': 'integer',
+        'default': 0},
+    'windows_public_vm_size': {
+        'type': 'string',
+        'default': 'Standard_D2_v2'},
+    'num_linux_private_agents': {
+        'type': 'integer',
+        'default': 0},
+    'linux_private_vm_size': {
+        'type': 'string',
+        'default': 'Standard_D2_v2'},
+    'num_linux_public_agents': {
+        'type': 'integer',
+        'default': 0},
+    'linux_public_vm_size': {
+        'type': 'string',
+        'default': 'Standard_D2_v2'},
+    'windows_admin_user': {
+        'type': 'string',
+        'default': 'azureuser'},
+    'windows_admin_password': {
+        'type': 'string',
+        'default': 'replacepassword123'},
+    'linux_admin_user': {
+        'type': 'string',
+        'default': 'azureuser'},
+    'template_parameters': {
+        'type': 'dict'}
+}
 
 
 def deduce_image_project(doc: dict):

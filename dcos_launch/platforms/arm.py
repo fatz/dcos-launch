@@ -75,12 +75,13 @@ class AzureWrapper:
         # location is included to keep a similar model as dcos_launch.platforms.aws.BotoWrapper
         self.location = location
 
-    def deploy_template_to_new_resource_group(self, template_url, group_name, parameters, tags=None):
+    def deploy_template_to_new_resource_group(
+            self, template_url, group_name, parameters, tags=None, template=None):
         if tags is None:
             tags = dict()
         log.info('Checking deployment parameters vs template before starting...')
         deployment_properties = self.create_deployment_properties(
-            template_url, parameters)
+            template_url, parameters, template=template)
         deployment_name = DEPLOYMENT_NAME.format(group_name)
         # Resource group must be created before validation can occur
         if self.rmc.resource_groups.check_existence(group_name):
@@ -114,7 +115,7 @@ class AzureWrapper:
             stack.pop_all()
         log.info('Successfully started template deployment')
 
-    def create_deployment_properties(self, template_url, parameters):
+    def create_deployment_properties(self, template_url, parameters, template: dict=None):
         """ Pulls the targeted template, checks parameter specs and casts
         user provided parameters to the appropriate type. Assertion is raised
         if there are unused parameters or invalid casting
@@ -122,22 +123,27 @@ class AzureWrapper:
         user_parameters = copy.deepcopy(parameters)
         type_cast_map = {
             'string': str,
-            'secureString': str,
+            'securestring': str,
             'int': int,
             'bool': bool,
             'object': check_json_object,
             'secureObject': check_json_object,
             'array': check_array}
         log.debug('Pulling Azure template for parameter validation...')
-        r = requests.get(template_url)
-        r.raise_for_status()
-        template = r.json()
+        if template is None:
+            r = requests.get(template_url)
+            r.raise_for_status()
+            template = r.json()
         if 'parameters' not in template:
             assert user_parameters is None, 'This template does not support parameters, ' \
                 'yet parameters were supplied: {}'.format(user_parameters)
         log.debug('Constructing DeploymentProperties from user parameters: {}'.format(parameters))
         template_parameters = {}
         for k, v in template['parameters'].items():
+            i = template['parameters'][k]
+            if 'defaultValue' not in i:
+                print(k)
+                print(i)
             if k in user_parameters:
                 # All templates parameters are required to have a type field.
                 # Azure requires that parameters be provided as {key: {'value': value}}.
