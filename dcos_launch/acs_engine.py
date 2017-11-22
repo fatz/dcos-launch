@@ -174,6 +174,8 @@ class ACSEngineLauncher(dcos_launch.util.AbstractLauncher):
             self.config['windows_admin_password'],
             self.config['linux_admin_user'])
         arm_template, self.config['template_parameters'] = run_acs_engine(self.config['acs_engine_tarball_url'], acs_engine_template)  # noqa
+        # FIXME: can we not pass this option into ACS-engine?
+        self.config['template_parameters']['oauthEnabled'] = "true"
         self.azure_wrapper.deploy_template_to_new_resource_group(
             self.config.get('template_url'),
             self.config['deployment_name'],
