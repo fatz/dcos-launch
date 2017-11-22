@@ -6,6 +6,7 @@ import os
 import subprocess
 import tarfile
 import tempfile
+import uuid
 
 import requests
 
@@ -31,6 +32,7 @@ def generate_acs_engine_template(
         windows_admin_password: str='replacepassword123',
         linux_admin_user: str='azureuser',
         ):
+    unique_id = str(uuid.uuid4())[:8] + 'dcos'
     return {
         "apiVersion": "vlabs",
         "properties": {
@@ -39,7 +41,7 @@ def generate_acs_engine_template(
             },
             "masterProfile": {
                 "count": num_masters,
-                "dnsPrefix": "dcos-mstr",
+                "dnsPrefix": "master" + unique_id,
                 "vmSize": master_vm_size
             },
             "agentPoolProfiles": [
@@ -48,7 +50,7 @@ def generate_acs_engine_template(
                     "count": num_windows_public_agents,
                     "vmSize": windows_public_vm_size,
                     "osType": "Windows",
-                    "dnsPrefix": "wpub",
+                    "dnsPrefix": "wpub" + unique_id,
                     "ports": [80, 443, 8080, 3389]
                 },
                 {
@@ -56,14 +58,14 @@ def generate_acs_engine_template(
                     "count": num_windows_private_agents,
                     "vmSize": windows_private_vm_size,
                     "osType": "Windows",
-                    "dnsPrefix": ""
+                    "dnsPrefix": "wpri" + unique_id
                 },
                 {
                     "name": "linpub",
                     "count": num_linux_public_agents,
                     "vmSize": linux_public_vm_size,
                     "osType": "linux",
-                    "dnsPrefix": "linpub",
+                    "dnsPrefix": "linpub" + unique_id,
                     "ports": [
                         80,
                         443,
@@ -75,7 +77,7 @@ def generate_acs_engine_template(
                     "count": num_linux_private_agents,
                     "vmSize": linux_private_vm_size,
                     "osType": "linux",
-                    "dnsPrefix": ""
+                    "dnsPrefix": "linpri" + unique_id
                 }
             ],
             "windowsProfile": {
